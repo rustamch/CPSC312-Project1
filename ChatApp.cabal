@@ -35,8 +35,8 @@ library
       base >=4.7 && <5
   default-language: Haskell2010
 
-executable ChatApp-server-exe
-  main-is: ./server/Main.hs
+executable ChatApp-exe
+  main-is: Main.hs
   other-modules:
       Paths_ChatApp
   hs-source-dirs:
@@ -45,7 +45,25 @@ executable ChatApp-server-exe
   build-depends:
       ChatApp
     , base >=4.7 && <5
+  default-language: Haskell2010
+
+executable Server-exe
+  main-is: Main.hs
+  other-modules:
+      Internal
+      Paths_ChatApp
+  hs-source-dirs:
+      app/server
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      ChatApp
+    , aeson
+    , base >=4.7 && <5
+    , mtl
     , scotty
+    , stm
+    , unliftio-core
+    , wai-extra
   default-language: Haskell2010
 
 test-suite ChatApp-test

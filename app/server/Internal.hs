@@ -1,14 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
-
+{-# LANGUAGE DeriveGeneric #-}
 module Internal where
 
-data State = State [User]
+import Data.Aeson (FromJSON, ToJSON)
+import GHC.Generics
+
+data State = State [User] 
     deriving (Show)
 
 -- A user is a person who can chat with other users.
 -- Has a name, an ID, and a list of chats.
-data User = User String String [Chat]
-    deriving (Show)
+data User = User {
+    id :: String,
+    name :: String,
+    chats :: [Chat]
+} deriving (Show, Generic)
+
+instance ToJSON User
+instance FromJSON User
 
 instance Eq User where
     (User _ id1 _) == (User _ id2 _) = id1 == id2
@@ -21,14 +30,24 @@ userId (User _ id _) = id
 
 -- A chat is a conversation between two users.
 -- Has a fromID, toID, and a list of messages.
-data Chat = Chat String String [Message]
-    deriving (Show)
+data Chat = Chat {
+    fromID :: String,
+    toID :: String,
+    messages :: [Message]
+} deriving (Show, Generic)
+
+instance ToJSON Chat
+instance FromJSON Chat
+
 instance Eq Chat where
     (Chat user11 user12 _) == (Chat user21 user22 _) = (user11, user12) == (user21, user22)|| (user11, user12) == (user22, user21)
 
 getChat :: [Chat] -> String -> String -> Chat
 getChat [] fro to = Chat fro to []
 getChat (c:cs) fro to = if (Chat fro to []) == c then c else getChat cs fro to
+
+getUsers :: State -> [User]
+getUsers (State users) = users
 
 updateChatInList :: Chat -> [Chat] ->[Chat]
 updateChatInList chat chats = chat : [c | c <- chats, c /= chat]
@@ -38,8 +57,15 @@ updateMessageInChat msg (Chat from to msgs) = Chat from to (msg : msgs)
 
 -- A message is a string sent from one user to another.
 -- Has a fromID, a toID, and a string message.
-data Message = Message String String String
-    deriving (Show)
+data Message = Message {
+    from :: String,
+    to :: String,
+    msg :: String
+}
+    deriving (Show, Generic)
+
+instance ToJSON Message
+instance FromJSON Message
 
 findUser :: [User] -> String -> Maybe User
 findUser [] _ = Nothing
