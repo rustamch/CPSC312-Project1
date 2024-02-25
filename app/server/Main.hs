@@ -24,11 +24,12 @@ main = do
     scottyT 3000 runActionToIO app
 
 data UserCreateRequest = UserCreateRequest {
-  name :: String
+  name :: String,
+  id :: String
 } deriving (Show, Generic)
 
 getName :: UserCreateRequest -> String
-getName (UserCreateRequest name) = name
+getName (UserCreateRequest name _) = name
 
 instance ToJSON UserCreateRequest
 instance FromJSON UserCreateRequest
@@ -47,9 +48,23 @@ app = do
     get "/ping" $ do
       text "pong"
     post "/user" $ do
-      userCreateReq <- jsonData :: ActionT WebM UserCreateRequest
-      webM $ modify $ \ st -> createUser st "1" (getName userCreateReq)
-      json $ userCreateReq
+      (UserCreateRequest name id) <- jsonData :: ActionT WebM UserCreateRequest
+      webM $ modify $ \ st -> createUser st name id
+      json $ UserCreateRequest name id
+    post "/manyusers" $ do
+      users <- jsonData :: ActionT WebM [UserCreateRequest]
+      webM $ modify $ \ st -> foldl (\st (UserCreateRequest name id) -> createUser st name id) st users
+      json $ users
     get "/user" $ do
       users <- webM $ getUsers <$> (ask >>= liftIO . readTVarIO)
       json users
+    post "/message" $ do
+      message <- jsonData :: ActionT WebM Message
+      webM $ modify $ \ st -> sendMsg st message
+      state <- webM $ ask >>= liftIO . readTVarIO
+      json $ state
+    get "/chats/:id" $ do
+      id <- param "id"
+      state <- webM $ ask >>= liftIO . readTVarIO
+      let chats = getChats state id
+      json chats

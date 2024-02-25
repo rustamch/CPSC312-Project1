@@ -5,14 +5,18 @@ module Internal where
 import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics
 
-data State = State [User] 
-    deriving (Show)
+data State = State {
+    user :: [User] 
+} deriving (Show, Generic)
+
+instance ToJSON State
+instance FromJSON State
 
 -- A user is a person who can chat with other users.
 -- Has a name, an ID, and a list of chats.
 data User = User {
-    id :: String,
     name :: String,
+    id :: String,
     chats :: [Chat]
 } deriving (Show, Generic)
 
@@ -80,7 +84,10 @@ updateUser (User name id chats) (Message from to msg) =
 
 createUser :: State -> String -> String -> State
 createUser (State users) name id = 
-        State (User name id [] : users)
+    let existingUser = findUser users id
+        in case existingUser of
+            Nothing -> State (User name id [] : users)
+            _ -> State users
 
 sendMsg :: State -> Message -> State
 sendMsg (State users) (Message from to msg) = 
@@ -90,3 +97,10 @@ sendMsg (State users) (Message from to msg) =
             (Just fromU, Just toU) -> 
                 State (updateUsersInList [updateUser fromU (Message from to msg), updateUser toU (Message from to msg)] users)
             _ -> State users
+
+getChats :: State -> String -> [Chat]
+getChats (State users) id = 
+    let user = findUser users id
+        in case user of
+            Just (User _ _ chats) -> chats
+            _ -> []
