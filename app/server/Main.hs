@@ -4,7 +4,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Main (main) where
 
-import Internal
 import Lib
 import GHC.Generics
 import Data.Aeson (FromJSON, ToJSON)
@@ -55,9 +54,20 @@ app = do
       users <- jsonData :: ActionT WebM [UserCreateRequest]
       webM $ modify $ \ st -> foldl (\st (UserCreateRequest name id) -> createUser st name id) st users
       json $ users
-    get "/user" $ do
+    get "/allusers" $ do
       users <- webM $ getUsers <$> (ask >>= liftIO . readTVarIO)
       json users
+    get "/user/:id" $ do
+      id <- param "id"
+      state <- webM $ ask >>= liftIO . readTVarIO
+      let user = getUser state id
+      json user
+    post "/username/:id" $ do
+      id <- param "id"
+      name <- jsonData :: ActionT WebM String
+      webM $ modify $ \ st -> changeName st id name
+      state <- webM $ ask >>= liftIO . readTVarIO
+      json $ state
     post "/message" $ do
       message <- jsonData :: ActionT WebM Message
       webM $ modify $ \ st -> sendMsg st message

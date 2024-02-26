@@ -35,6 +35,9 @@ ghc-options:
 
 library:
   source-dirs: src
+  dependencies:
+  - aeson
+  -
 
 executables:
   ChatApp-exe:
