@@ -87,7 +87,6 @@ selectChatIO user targetChat = do
     case chat of
         Just c -> do
             updateAndDisplayChat user targetChat
-            loop
         Nothing -> do
             putStrLn "Chat not found, create new chat?"
             createNewChat user targetChat
@@ -126,7 +125,7 @@ printMessagesLoop u p2 oldChat = do
     if not (areChatsEqual newChat oldChat) then do
         clearScreen
         printAllMessages name newChat
-        putStrLn "Enter your message: [enter 'back' to go back to the menu]"
+        putStrLn "Enter your message: [enter '\\back' to go back to the menu]"
         putStrLn "==========================="
         printMessagesLoop user p2 newChat
     else printMessagesLoop user p2 newChat
@@ -135,12 +134,9 @@ waitForInput :: User -> String -> IO ()
 waitForInput u target = do
     let name = username u
     msg <- getLine
-    if msg == "back" then return()
-    else do
-        sendMessageServer msg u target
-        waitForInput u target
-
-
+    checkIfBackToMenu msg (sendMessageServer msg u target) u
+    sendMessageServer msg u target
+    waitForInput u target
 
 checkUserExists :: String -> IO Bool
 checkUserExists name = do
@@ -166,7 +162,6 @@ createNewChat user targetUser = do
             True -> do
                 sendMessageIO user targetUser
                 updateAndDisplayChat user targetUser
-                loop
             False -> do
                 putStrLn "User not found, trying again..."
                 promptAndCreateNewChat user
@@ -174,13 +169,13 @@ createNewChat user targetUser = do
 
 promptAndCreateNewChat :: User -> IO ()
 promptAndCreateNewChat user = do
-    putStrLn "Enter the username of the user you want to chat with: [enter 'back' to go back to the menu]"
+    putStrLn "Enter the username of the user you want to chat with: [enter '\\back' to go back to the menu]"
     targetUser <- getLine
     checkIfBackToMenu targetUser (createNewChat user targetUser) user
 
 sendMessageIO :: User -> String -> IO ()
 sendMessageIO user targetUser = do
-    putStrLn "Enter your message: [enter 'back' to go back to the menu]"
+    putStrLn "Enter your message: [enter '\\back' to go back to the menu]"
     putStrLn "==========================="
     msg <- getLine
     checkIfBackToMenu msg (sendMessageServer msg user targetUser) user
@@ -196,7 +191,7 @@ sendMessageServer msg user target = do
 
 checkIfBackToMenu :: String -> IO () -> User -> IO ()
 checkIfBackToMenu input action user = do
-    if input == "back" then selectChat user else action
+    if input == "\\back" then selectChat user else action
 
 loop :: IO ()
 loop = do
