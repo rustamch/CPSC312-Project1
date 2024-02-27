@@ -41,7 +41,6 @@ library
 executable ChatApp-exe
   main-is: ChatClient.hs
   other-modules:
-      Internal
       Paths_ChatApp
   autogen-modules:
       Paths_ChatApp

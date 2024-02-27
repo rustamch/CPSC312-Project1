@@ -107,7 +107,7 @@ checkUserExists name = do
     request <- parseRequest ("http://localhost:3000/username/"++name)
     response <- httpLBS request
     putStrLn $ "Response: " ++ (BL.unpack $ getResponseBody response)
-    let userM :: Maybe Chat = decode $ getResponseBody response
+    let userM :: Maybe User = decode $ getResponseBody response
     putStrLn $ "User: " ++ (show userM)
     case userM of
         Nothing -> 

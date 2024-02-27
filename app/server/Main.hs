@@ -22,17 +22,6 @@ main = do
     let runActionToIO m = runReaderT (runWebM m) sync
     scottyT 3000 runActionToIO app
 
-data UserCreateRequest = UserCreateRequest {
-  name :: String,
-  id :: String
-} deriving (Show, Generic)
-
-getName :: UserCreateRequest -> String
-getName (UserCreateRequest name _) = name
-
-instance ToJSON UserCreateRequest
-instance FromJSON UserCreateRequest
-
 newtype WebM a = WebM { runWebM :: ReaderT (TVar State) IO a }
     deriving (Applicative, Functor, Monad, MonadIO, MonadReader (TVar State), MonadUnliftIO)
 
