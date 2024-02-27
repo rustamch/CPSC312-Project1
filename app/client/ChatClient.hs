@@ -77,8 +77,33 @@ selectChat user = do
     clearScreen
     putStrLn ("Welcome, "++(name user)++"!")
     printAllChatOpponents user
+    tid <- forkIO $ do
+        printSelectScreenLoop user
+    waitForChatSelection user
+    killThread tid
     targetChat <- getLine
     checkIfBackToMenu targetChat (selectChatIO user targetChat) user
+
+printSelectScreenLoop :: User -> IO ()
+printSelectScreenLoop user = do
+    threadDelay 1000000
+    request <- parseRequest ("http://localhost:3000/username/"++(username user))
+    response <- httpLBS request
+    let Just u = decode $ getResponseBody response
+    if (getChatOppList user) == (getChatOppList u) then do
+        printSelectScreenLoop u
+    else do
+        clearScreen
+        putStrLn ("Welcome, "++(name user)++"!")
+        putStrLn "Enter the username of the user you want to chat with: [enter '\\back' to go back to the menu]"
+        printAllChatOpponents u
+        printSelectScreenLoop u
+
+waitForChatSelection :: User -> IO ()
+waitForChatSelection user = do
+    targetChat <- getLine
+    selectChatIO user targetChat
+    
 
 selectChatIO :: User -> String -> IO ()
 selectChatIO user targetChat = do

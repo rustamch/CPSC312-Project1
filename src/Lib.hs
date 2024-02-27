@@ -142,3 +142,6 @@ getChats (State users) id =
         in case user of
             Just (User _ _ chats) -> chats
             _ -> []
+
+getChatOppList :: User -> [String]
+getChatOppList (User name _ chats) = [if p1 == name then p2 else p1 | (Chat p1 p2 _) <- chats]
