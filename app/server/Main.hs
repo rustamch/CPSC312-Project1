@@ -49,7 +49,9 @@ app = do
     post "/user" $ do
       (UserCreateRequest name id) <- jsonData :: ActionT WebM UserCreateRequest
       webM $ modify $ \ st -> createUser st name id
-      json $ UserCreateRequest name id
+      state <- webM $ ask >>= liftIO . readTVarIO
+      let user = getUserById state id
+      json $ user
     post "/manyusers" $ do
       users <- jsonData :: ActionT WebM [UserCreateRequest]
       webM $ modify $ \ st -> foldl (\st (UserCreateRequest name id) -> createUser st name id) st users
@@ -60,14 +62,13 @@ app = do
     get "/user/:id" $ do
       id <- param "id"
       state <- webM $ ask >>= liftIO . readTVarIO
-      let user = getUser state id
+      let user = getUserById state id
       json user
-    post "/username/:id" $ do
-      id <- param "id"
-      name <- jsonData :: ActionT WebM String
-      webM $ modify $ \ st -> changeName st id name
+    get "/username/:name" $ do
+      name <- param "name"
       state <- webM $ ask >>= liftIO . readTVarIO
-      json $ state
+      let user = getUserByName state name
+      json user
     post "/message" $ do
       message <- jsonData :: ActionT WebM Message
       webM $ modify $ \ st -> sendMsg st message
@@ -78,3 +79,13 @@ app = do
       state <- webM $ ask >>= liftIO . readTVarIO
       let chats = getChats state id
       json chats
+    get "/chat/:from/:to" $ do
+      from <- param "from"
+      to <- param "to"
+      state <- webM $ ask >>= liftIO . readTVarIO
+      let user = getUserByName state from
+      case user of
+        Just u -> do
+          let chat = getChat (userChats u) (userId u) to
+          json chat
+        Nothing -> json user
