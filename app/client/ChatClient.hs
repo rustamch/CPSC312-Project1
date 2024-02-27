@@ -5,6 +5,8 @@ module Main where
 import Control.Monad (unless)
 import Network.HTTP.Simple
 import Control.Monad
+import Control.Concurrent
+import Debug.Trace
 import System.IO
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Aeson
@@ -29,7 +31,7 @@ main = do
     case userM of
         Just user -> do
             selectChat $ user
-            loop 
+            loop
         Nothing -> do
             putStrLn "User not found, create new user? [y/N]"
             confirm <- getLine
@@ -101,13 +103,44 @@ updateAndDisplayChat (User name id _) p2 = do
             let chatM = getChat (chats u) (username u) p2
             case chatM of
                 Just chat -> do
-                    printAllMessages name chat
+                    tid <- forkIO $ do
+                        printMessagesLoop u p2 (Chat "" "" [])
+                    waitForInput u p2
+                    killThread tid
                 Nothing -> do
                     putStrLn "Chat not found, create new chat?"
                     createNewChat u p2
         Nothing -> do
             putStrLn "Impossible"
             error "Impossible"
+
+printMessagesLoop :: User -> String -> Chat -> IO ()
+printMessagesLoop u p2 oldChat = do
+    threadDelay 1000000
+    let name = username u
+    request <- parseRequest ("http://localhost:3000/username/"++name)
+    response <- httpLBS request
+    let Just user = decode $ getResponseBody response
+
+    let newChat = getOrCreateChat (chats user) (username user) p2
+    if not (areChatsEqual newChat oldChat) then do
+        clearScreen
+        printAllMessages name newChat
+        putStrLn "Enter your message: [enter 'back' to go back to the menu]"
+        putStrLn "==========================="
+        printMessagesLoop user p2 newChat
+    else printMessagesLoop user p2 newChat
+
+waitForInput :: User -> String -> IO ()
+waitForInput u target = do
+    let name = username u
+    msg <- getLine
+    if msg == "back" then return()
+    else do
+        sendMessageServer msg u target
+        waitForInput u target
+
+
 
 checkUserExists :: String -> IO Bool
 checkUserExists name = do
@@ -117,7 +150,7 @@ checkUserExists name = do
     let userM :: Maybe User = decode $ getResponseBody response
     putStrLn $ "User: " ++ (show userM)
     case userM of
-        Nothing -> 
+        Nothing ->
             return False
         _ -> return True
 
