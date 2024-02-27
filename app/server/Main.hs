@@ -60,14 +60,8 @@ app = do
     get "/user/:id" $ do
       id <- param "id"
       state <- webM $ ask >>= liftIO . readTVarIO
-      let user = getUser state id
+      let user = getUserById state id
       json user
-    post "/username/:id" $ do
-      id <- param "id"
-      name <- jsonData :: ActionT WebM String
-      webM $ modify $ \ st -> changeName st id name
-      state <- webM $ ask >>= liftIO . readTVarIO
-      json $ state
     post "/message" $ do
       message <- jsonData :: ActionT WebM Message
       webM $ modify $ \ st -> sendMsg st message

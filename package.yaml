@@ -37,7 +37,6 @@ library:
   source-dirs: src
   dependencies:
   - aeson
-  -
 
 executables:
   ChatApp-exe:
@@ -51,6 +50,7 @@ executables:
     - ChatApp
     - http-conduit
     - bytestring
+    - aeson
   Server-exe:
     main:                Main.hs
     source-dirs:         app/server
