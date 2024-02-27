@@ -90,7 +90,7 @@ selectChat user = do
     waitForChatSelection user
     killThread tid
     targetChat <- getLine
-    checkIfBackToMenu targetChat (selectChatIO user targetChat) user
+    checkIfBackToMenu targetChat (updateAndDisplayChat user targetChat) user
 
 printSelectScreenLoop :: User -> IO ()
 printSelectScreenLoop user = do
@@ -159,7 +159,7 @@ printMessagesLoop u p2 oldChat = do
         clearScreen
         printAllMessages name newChat
         putStrLn "Enter your message: [enter '\\back' to go back to the menu]"
-        putStrLn "==========================="
+        putStrLn "====================================================================================="
         printMessagesLoop user p2 newChat
     else printMessagesLoop user p2 newChat
 
