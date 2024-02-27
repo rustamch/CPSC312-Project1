@@ -22,8 +22,10 @@ exit = do
 main :: IO ()
 main = do
     clearScreen
-    putStrLn "===============WELCOME TO THE CHAT CLIENT!==============="
-    putStrLn "Enter your user id to login (or a new username to create a new user):"
+    putStrLn "===========================WELCOME TO THE CHAT CLIENT!================================"
+    putStrLn "Enter '\\exit' to exit the program at any time, and'\\back' to come back to this page."
+    putStrLn "--------------------------------------------------------------------------------------"
+    putStrLn "Enter your user id to login (or a new id to create a new user):"
     id <- getLine
     request <- parseRequest ("http://localhost:3000/user/"++id)
     response <- httpLBS request
@@ -51,21 +53,27 @@ createNewUser = do
     putStrLn "y/N"
     confirm <- getLine
     if confirm `elem` ["y", "Y", "yes"] then do
-        request <- parseRequest "POST http://localhost:3000/user"
-        let user = User name id []
-        let req = setRequestBodyJSON user request
-        response <- httpLBS req
-        putStrLn $ "Created user: " ++ (BL.unpack $ getResponseBody response)
-        selectChat user
-        loop
-    else loop
+        e1 <- checkUserExists name
+        e2 <- checkUserExists id
+        if e1 || e2 then do
+            clearScreen
+            putStrLn "User already exists, try again..."
+            createNewUser
+        else do
+            request <- parseRequest "POST http://localhost:3000/user"
+            let user = User name id []
+            let req = setRequestBodyJSON user request
+            response <- httpLBS req
+            -- putStrLn $ "Created user: " ++ (BL.unpack $ getResponseBody response)
+            selectChat user
+    else exit
 
 printAllChatOpponents :: User -> IO ()
 printAllChatOpponents (User name _ chats) = do
     putStrLn "Select a chat or start a new chat by entering your friend's username:"
     forM_ chats $ \(Chat p1 p2 _) -> do
         putStrLn $ "|- " ++ (if p1 == name then p2 else p1)
-    putStrLn "==========================="
+    putStrLn "====================================================================================="
 
 printAllMessages :: String -> Chat -> IO ()
 printAllMessages username (Chat _ _ messages) = do
@@ -167,9 +175,9 @@ checkUserExists :: String -> IO Bool
 checkUserExists name = do
     request <- parseRequest ("http://localhost:3000/username/"++name)
     response <- httpLBS request
-    putStrLn $ "Response: " ++ (BL.unpack $ getResponseBody response)
+    -- putStrLn $ "Response: " ++ (BL.unpack $ getResponseBody response)
     let userM :: Maybe User = decode $ getResponseBody response
-    putStrLn $ "User: " ++ (show userM)
+    -- putStrLn $ "User: " ++ (show userM)
     case userM of
         Nothing ->
             return False
@@ -185,10 +193,12 @@ createNewChat user targetUser = do
         exists <- checkUserExists targetUser
         case exists of
             True -> do
+                clearScreen
                 sendMessageIO user targetUser
                 updateAndDisplayChat user targetUser
             False -> do
                 putStrLn "User not found, trying again..."
+                putStrLn ""
                 promptAndCreateNewChat user
     else selectChat user
 
@@ -201,7 +211,7 @@ promptAndCreateNewChat user = do
 sendMessageIO :: User -> String -> IO ()
 sendMessageIO user targetUser = do
     putStrLn "Enter your message: [enter '\\back' to go back to the menu]"
-    putStrLn "==========================="
+    putStrLn "====================================================================================="
     msg <- getLine
     checkIfBackToMenu msg (sendMessageServer msg user targetUser) user
 
@@ -211,12 +221,13 @@ sendMessageServer msg user target = do
     let message = Message (username user) target msg
     let req = setRequestBodyJSON message request
     response <- httpLBS req
-    -- putStrLn $ "Sent message: " ++ (BL.unpack $ getResponseBody response)
     updateAndDisplayChat user target
 
 checkIfBackToMenu :: String -> IO () -> User -> IO ()
 checkIfBackToMenu input action user = do
-    if input == "\\back" then selectChat user else action
+    if input == "\\back" then selectChat user 
+    else if input == "\\exit" then exit
+    else action
 
 loop :: IO ()
 loop = do
