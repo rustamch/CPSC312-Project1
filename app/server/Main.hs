@@ -77,4 +77,13 @@ app = do
         Just u -> do
           let chat = getChat (userChats u) (userId u) to
           json chat
-        Nothing -> json user
+        Nothing -> 
+          json user
+
+data UserCreateRequest = UserCreateRequest {
+    name :: String,
+    id :: String
+} deriving (Show, Generic)
+
+instance ToJSON UserCreateRequest
+instance FromJSON UserCreateRequest

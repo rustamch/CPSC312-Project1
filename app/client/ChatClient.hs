@@ -80,7 +80,8 @@ selectChat user = do
 
 selectChatIO :: User -> String -> IO ()
 selectChatIO user targetChat = do
-    let chat = getChat (chats user) (userId user) targetChat
+    putStrLn ("Selecting chat..."++targetChat++"..."++(username user))
+    let chat = getChat (chats user) (username user) targetChat
     case chat of
         Just c -> do
             updateAndDisplayChat user targetChat
@@ -90,17 +91,23 @@ selectChatIO user targetChat = do
             createNewChat user targetChat
 
 updateAndDisplayChat :: User -> String -> IO ()
-updateAndDisplayChat u1 p2 = do
+updateAndDisplayChat (User name id _) p2 = do
     clearScreen
-    request <- parseRequest ("http://localhost:3000/chat/"++(username u1)++"/"++p2)
+    request <- parseRequest ("http://localhost:3000/username/"++name)
     response <- httpLBS request
-    let chatM = decode $ getResponseBody response
-    case chatM of
-        Just chat -> do
-            printAllMessages (username u1) chat
+    let user = decode $ getResponseBody response
+    case user of
+        Just u -> do
+            let chatM = getChat (chats u) (username u) p2
+            case chatM of
+                Just chat -> do
+                    printAllMessages name chat
+                Nothing -> do
+                    putStrLn "Chat not found, create new chat?"
+                    createNewChat u p2
         Nothing -> do
-            putStrLn "Chat not found, create new chat?"
-            createNewChat u1 p2
+            putStrLn "Impossible"
+            error "Impossible"
 
 checkUserExists :: String -> IO Bool
 checkUserExists name = do
@@ -151,8 +158,8 @@ sendMessageServer msg user target = do
     let message = Message (username user) target msg
     let req = setRequestBodyJSON message request
     response <- httpLBS req
-    putStrLn $ "Sent message: " ++ (BL.unpack $ getResponseBody response)
-    loop
+    -- putStrLn $ "Sent message: " ++ (BL.unpack $ getResponseBody response)
+    updateAndDisplayChat user target
 
 checkIfBackToMenu :: String -> IO () -> User -> IO ()
 checkIfBackToMenu input action user = do

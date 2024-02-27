@@ -134,3 +134,4 @@ getChats (State users) id =
         in case user of
             Just (User _ _ chats) -> chats
             _ -> []
+
