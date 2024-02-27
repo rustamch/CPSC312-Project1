@@ -37,7 +37,6 @@ library:
   source-dirs: src
   dependencies:
   - aeson
-  -
 
 executables:
   ChatApp-exe:
@@ -51,6 +50,12 @@ executables:
     - ChatApp
     - http-conduit
     - bytestring
+    - vty
+    - containers
+    - brick
+    - microlens
+    - microlens-mtl
+    - microlens-th
   Server-exe:
     main:                Main.hs
     source-dirs:         app/server
