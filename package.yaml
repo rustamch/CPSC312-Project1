@@ -35,17 +35,23 @@ ghc-options:
 
 library:
   source-dirs: src
+  dependencies:
+  - aeson
 
 executables:
   ChatApp-exe:
-    main:                Main.hs
-    source-dirs:         app
+    main:                ChatClient.hs
+    source-dirs:         app/client
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
     - ChatApp
+    - http-conduit
+    - bytestring
+    - aeson
+    - ansi-terminal 
   Server-exe:
     main:                Main.hs
     source-dirs:         app/server
@@ -61,6 +67,7 @@ executables:
     - mtl
     - stm
     - wai-extra
+   
 
 tests:
   ChatApp-test:
@@ -72,3 +79,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - ChatApp
+    - http-conduit

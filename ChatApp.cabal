@@ -34,27 +34,31 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
   default-language: Haskell2010
 
 executable ChatApp-exe
-  main-is: Main.hs
+  main-is: ChatClient.hs
   other-modules:
       Paths_ChatApp
   autogen-modules:
       Paths_ChatApp
   hs-source-dirs:
-      app
+      app/client
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       ChatApp
+    , aeson
+    , ansi-terminal
     , base >=4.7 && <5
+    , bytestring
+    , http-conduit
   default-language: Haskell2010
 
 executable Server-exe
   main-is: Main.hs
   other-modules:
-      Internal
       Paths_ChatApp
   autogen-modules:
       Paths_ChatApp
@@ -85,4 +89,5 @@ test-suite ChatApp-test
   build-depends:
       ChatApp
     , base >=4.7 && <5
+    , http-conduit
   default-language: Haskell2010

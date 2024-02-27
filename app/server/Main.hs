@@ -4,7 +4,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Main (main) where
 
-import Internal
 import Lib
 import GHC.Generics
 import Data.Aeson (FromJSON, ToJSON)
@@ -23,17 +22,6 @@ main = do
     let runActionToIO m = runReaderT (runWebM m) sync
     scottyT 3000 runActionToIO app
 
-data UserCreateRequest = UserCreateRequest {
-  name :: String,
-  id :: String
-} deriving (Show, Generic)
-
-getName :: UserCreateRequest -> String
-getName (UserCreateRequest name _) = name
-
-instance ToJSON UserCreateRequest
-instance FromJSON UserCreateRequest
-
 newtype WebM a = WebM { runWebM :: ReaderT (TVar State) IO a }
     deriving (Applicative, Functor, Monad, MonadIO, MonadReader (TVar State), MonadUnliftIO)
 
@@ -50,14 +38,26 @@ app = do
     post "/user" $ do
       (UserCreateRequest name id) <- jsonData :: ActionT WebM UserCreateRequest
       webM $ modify $ \ st -> createUser st name id
-      json $ UserCreateRequest name id
+      state <- webM $ ask >>= liftIO . readTVarIO
+      let user = getUserById state id
+      json $ user
     post "/manyusers" $ do
       users <- jsonData :: ActionT WebM [UserCreateRequest]
       webM $ modify $ \ st -> foldl (\st (UserCreateRequest name id) -> createUser st name id) st users
       json $ users
-    get "/user" $ do
+    get "/allusers" $ do
       users <- webM $ getUsers <$> (ask >>= liftIO . readTVarIO)
       json users
+    get "/user/:id" $ do
+      id <- param "id"
+      state <- webM $ ask >>= liftIO . readTVarIO
+      let user = getUserById state id
+      json user
+    get "/username/:name" $ do
+      name <- param "name"
+      state <- webM $ ask >>= liftIO . readTVarIO
+      let user = getUserByName state name
+      json user
     post "/message" $ do
       message <- jsonData :: ActionT WebM Message
       webM $ modify $ \ st -> sendMsg st message
@@ -68,3 +68,22 @@ app = do
       state <- webM $ ask >>= liftIO . readTVarIO
       let chats = getChats state id
       json chats
+    get "/chat/:from/:to" $ do
+      from <- param "from"
+      to <- param "to"
+      state <- webM $ ask >>= liftIO . readTVarIO
+      let user = getUserByName state from
+      case user of
+        Just u -> do
+          let chat = getChat (userChats u) (userId u) to
+          json chat
+        Nothing -> 
+          json user
+
+data UserCreateRequest = UserCreateRequest {
+    name :: String,
+    id :: String
+} deriving (Show, Generic)
+
+instance ToJSON UserCreateRequest
+instance FromJSON UserCreateRequest
