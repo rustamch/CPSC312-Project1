@@ -51,6 +51,7 @@ executables:
     - http-conduit
     - bytestring
     - aeson
+    - ansi-terminal 
   Server-exe:
     main:                Main.hs
     source-dirs:         app/server
@@ -66,6 +67,7 @@ executables:
     - mtl
     - stm
     - wai-extra
+   
 
 tests:
   ChatApp-test:

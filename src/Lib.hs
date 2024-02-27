@@ -34,6 +34,9 @@ username (User name _ _) = name
 userId :: User -> String
 userId (User _ id _) = id
 
+userChats :: User -> [Chat]
+userChats (User _ _ chats) = chats
+
 findUserById :: [User] -> String -> Maybe User
 findUserById [] _ = Nothing
 findUserById (u:us) id = if u == (User "" id []) then Just u else findUserById us id
@@ -56,9 +59,15 @@ instance FromJSON Chat
 instance Eq Chat where
     (Chat user11 user12 _) == (Chat user21 user22 _) = (user11, user12) == (user21, user22)|| (user11, user12) == (user22, user21)
 
-getChat :: [Chat] -> String -> String -> Chat
-getChat [] fro to = Chat fro to []
-getChat (c:cs) fro to = if (Chat fro to []) == c then c else getChat cs fro to
+getChat :: [Chat] -> String -> String -> Maybe Chat
+getChat [] fro to = Nothing
+getChat (c:cs) fro to = if (Chat fro to []) == c then Just c else getChat cs fro to
+
+getOrCreateChat :: [Chat] -> String -> String -> Chat
+getOrCreateChat chats fro to = 
+    case getChat chats fro to of
+        Just c -> c
+        _ -> Chat fro to []
 
 getUsers :: State -> [User]
 getUsers (State users) = users
@@ -100,7 +109,7 @@ updateUsersInList users lou = users ++ [u | u <- lou, not (u `elem` users)]
 
 updateUser :: User -> Message -> User
 updateUser (User name id chats) (Message from to msg) = 
-    User name id (updateChatInList (updateMessageInChat (Message from to msg) (getChat chats from to)) chats)
+    User name id (updateChatInList (updateMessageInChat (Message from to msg) (getOrCreateChat chats from to)) chats)
 
 createUser :: State -> String -> String -> State
 createUser (State users) name id = 
