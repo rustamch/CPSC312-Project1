@@ -29,7 +29,7 @@ instance Eq User where
     (User _ id1 _) == (User _ id2 _) = id1 == id2
 
 areChatsEqual :: Chat -> Chat -> Bool
-areChatsEqual (Chat p1 p2 m1) (Chat p3 p4 m2) = (p1 == p3 && p2 == p4) || (p1 == p4 && p2 == p3)
+areChatsEqual (Chat p1 p2 m1) (Chat p3 p4 m2) = ((p1 == p3 && p2 == p4) || (p1 == p4 && p2 == p3))
     && m1 == m2
 
 
@@ -91,10 +91,10 @@ getUserByName (State users) name = findUserByName users name
 --             _ -> State users
 
 updateChatInList :: Chat -> [Chat] ->[Chat]
-updateChatInList chat chats = chat : [c | c <- chats, c /= chat]
+updateChatInList chat chats = [c | c <- chats, c /= chat] ++ [chat]
 
 updateMessageInChat :: Message -> Chat -> Chat
-updateMessageInChat msg (Chat from to msgs) = Chat from to (msg : msgs)
+updateMessageInChat msg (Chat from to msgs) = Chat from to (msgs ++ [msg])
 
 -- A message is a string sent from one user to another.
 -- Has a fromID, a toID, and a string message.
